@@ -24,48 +24,44 @@ document.getElementById("drop_zone").addEventListener("drop", function(e) {
     const header = rows[0];
     const data = rows.slice(1);
 
-    // B → A のフィールド名変換
     const fieldMap = {
-      "受付ID": "問い合わせID",
-      "氏名": "名前",
-      "フリガナ": "カナ",
-      "x": "1",
-      "y": "2",
-      "z": "3",
-      "店舗": "店舗",
-      "時間": "受付時間",
-      "性別": "性別"
+      "E": "aD",
+      "F": "aE",
+      "G": "aF",
+      "I": "aH",
+      "J": "aG",
+      "N": "aQ",
+      "P": "aO",
+      "R": "aP",
+      "U": "aI",
+      "W": "aB"
     };
 
-    // 性別コード変換
     const genderMap = {
-      "1": "男",
-      "2": "女"
+      "男": "男性",
+      "女": "女性"
     };
 
-    // Aフォーマットの出力順
     const outputHeader = [
-      "問い合わせID",
-      "1",
-      "2",
-      "3",
-      "名前",
-      "カナ",
-      "店舗",
-      "受付時間",
-      "性別"
+      "A", "aB", "C", "D", "aD", "aE", "aF", "aG", "H", "aH", "I", "J",
+      "K", "L", "M", "aQ", "N", "aO", "O", "aP", "P", "Q", "R", "S", "T",
+      "aI", "U", "V", "W", "X", "Y", "Z"
     ];
 
     const mappedRows = data.map(row => {
       const rowObj = {};
       header.forEach((col, i) => {
-        const mappedCol = fieldMap[col];
-        if (mappedCol) {
-          if (mappedCol === "性別") {
-            rowObj[mappedCol] = genderMap[row[i]] || row[i];
-          } else {
-            rowObj[mappedCol] = row[i];
-          }
+        const value = row[i];
+        const mappedCol = fieldMap[col] || col;
+
+        if (col === "I") {
+          rowObj[mappedCol] = genderMap[value] || value;
+        } else if (col === "N") {
+          rowObj[mappedCol] = value.replace(/^TEL\\s*/, "");
+        } else if (col === "W") {
+          rowObj[mappedCol] = value.replace(/^未設定\\s*/, "");
+        } else {
+          rowObj[mappedCol] = value;
         }
       });
       return outputHeader.map(col => rowObj[col] || "");
@@ -75,10 +71,12 @@ document.getElementById("drop_zone").addEventListener("drop", function(e) {
     const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = "b_converted.csv";
+
+    const originalName = file.name.replace(/\\.csv$/i, "");
+    link.download = originalName + "_converted.csv";
     link.click();
 
-    document.getElementById("status").textContent = "✅ 変換完了！（b_converted.csv を保存しました）";
+    document.getElementById("status").textContent = "✅ 変換完了！（" + link.download + " を保存しました）";
   };
 
   reader.readAsText(file, "utf-8");
