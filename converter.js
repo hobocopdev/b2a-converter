@@ -1,31 +1,27 @@
-document.getElementById("drop_zone").addEventListener("dragover", function(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = "copy";
-});
-
-document.getElementById("drop_zone").addEventListener("drop", function(e) {
-  e.preventDefault();
-  const file = e.dataTransfer.files[0];
-  if (!file.name.endsWith(".csv")) {
-    alert("CSVファイルをドロップしてください");
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = function(event) {
-    const text = event.target.result;
-    const rows = text.split(/\r?\n/).filter(row => row.trim()).map(row => row.split(","));
-
-    if (rows.length < 2) {
-      alert("CSVの内容が不正です");
-      return;
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>CSV変換ツール</title>
+  <style>
+    #drop_zone {
+      width: 100%;
+      height: 150px;
+      border: 2px dashed #aaa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #666;
     }
+  </style>
+</head>
+<body>
+  <h3>CSVファイルをドロップしてください</h3>
+  <div id="drop_zone">ここにCSVをドロップ</div>
+  <p id="status"></p>
 
-    const header = rows[0];
-    const data = rows.slice(1);
-
-   console.log('Data rows:', data);
-
+  <script>
     const fieldMap = {
       "応募日時": "応募日時",
       "氏名": "氏名（漢字）",
@@ -45,97 +41,77 @@ document.getElementById("drop_zone").addEventListener("drop", function(e) {
     };
 
     const outputHeader = [
-      "応募受付先ID", "応募受付先", "問合せNo", "応募日時", "氏名（漢字）", "氏名（ふりがな）", "生年月日", "性別", "郵便番号コード", "都道府県名", "市区町村名", "住所（その他）",
-      "沿線名", "駅名", "メールアドレス（PC）", "メールアドレス（携帯）", "電話番号", "そのほかの電話番号", "その他連絡事項", "現在の職業", "応募職種", "応募職種の職務経験", "希望する雇用形態", "必要資格", "保有資格",
-      "勤務可能曜日1", "勤務可能曜日2", "勤務可能曜日3", "勤務可能曜日4", "勤務可能曜日5", "勤務可能曜日6", "勤務可能曜日7",
- "勤務可能時間帯1", "勤務可能時間帯2", "勤務可能時間帯3", "勤務可能時間帯4", "勤務可能時間帯5", "勤務可能時間帯6", "学校区分", "学校名", "卒業年月", "卒業区分", "職務経験", 
-"勤務先企業名1", "入社年月1", "退社年月1", "就業中1", "経験職種1", "年収1", "就業形態1", "職務内容1", 
-"勤務先企業名2", "入社年月2", "退社年月2", "就業中2", "経験職種2", "年収2", "就業形態2", "職務内容2", 
-"勤務先企業名3", "入社年月3", "退社年月3", "就業中3", "経験職種3", "年収3", "就業形態3", "職務内容3",
- "勤務先企業名4", "入社年月4", "退社年月4", "就業中4", "経験職種4", "年収4", "就業形態4", "職務内容4", 
-"勤務先企業名5", "入社年月5", "退社年月5", "就業中5", "経験職種5", "年収5", "就業形態5", "職務内容5", 
-"勤務先企業名6", "入社年月6", "退社年月6", "就業中6", "経験職種6", "年収6", "就業形態6", "職務内容6",
- "勤務先企業名7", "入社年月7", "退社年月7", "就業中7", "経験職種7", "年収7", "就業形態7", "職務内容7", 
-"勤務先企業名8", "入社年月8", "退社年月8", "就業中8", "経験職種8", "年収8", "就業形態8", "職務内容8", 
-"勤務先企業名9", "入社年月9", "退社年月9", "就業中9", "経験職種9", "年収9", "就業形態9", "職務内容9",
- "勤務先企業名10", "入社年月10", "退社年月10", "就業中10", "経験職種10", "年収10", "就業形態10", "職務内容10",
- "追加質問1", "追加回答1", "追加質問2", "追加回答2", "追加質問3", "追加回答3", "自己PR", "自動車運転免許", 
-"パソコンスキル", "スキル・その他資格1_取得年", "スキル・その他資格1_取得月", "スキル・その他資格1_内容",
-    "スキル・その他資格2_取得年", "スキル・その他資格2_取得月", "スキル・その他資格2_内容",
-    "スキル・その他資格3_取得年", "スキル・その他資格3_取得月", "スキル・その他資格3_内容",
-    "スキル・その他資格4_取得年", "スキル・その他資格4_取得月", "スキル・その他資格4_内容",
-    "スキル・その他資格5_取得年", "スキル・その他資格5_取得月", "スキル・その他資格5_内容",
-    "スキル・その他資格6_取得年", "スキル・その他資格6_取得月", "スキル・その他資格6_内容",
-    "スキル・その他資格7_取得年", "スキル・その他資格7_取得月", "スキル・その他資格7_内容",
-    "スキル・その他資格8_取得年", "スキル・その他資格8_取得月", "スキル・その他資格8_内容",
-    "スキル・その他資格9_取得年", "スキル・その他資格9_取得月", "スキル・その他資格9_内容",
-    "スキル・その他資格10_取得年", "スキル・その他資格10_取得月", "スキル・その他資格10_内容",
-    "スキル・その他資格11_取得年", "スキル・その他資格11_取得月", "スキル・その他資格11_内容",
-    "スキル・その他資格12_取得年", "スキル・その他資格12_取得月", "スキル・その他資格12_内容",
-    "スキル・その他資格13_取得年", "スキル・その他資格13_取得月", "スキル・その他資格13_内容",
-    "スキル・その他資格14_取得年", "スキル・その他資格14_取得月", "スキル・その他資格14_内容",
-    "スキル・その他資格15_取得年", "スキル・その他資格15_取得月", "スキル・その他資格15_内容",
-    "スキル・その他資格16_取得年", "スキル・その他資格16_取得月", "スキル・その他資格16_内容",
-    "スキル・その他資格17_取得年", "スキル・その他資格17_取得月", "スキル・その他資格17_内容",
-    "スキル・その他資格18_取得年", "スキル・その他資格18_取得月", "スキル・その他資格18_内容",
-    "スキル・その他資格19_取得年", "スキル・その他資格19_取得月", "スキル・その他資格19_内容",
-    "スキル・その他資格20_取得年", "スキル・その他資格20_取得月", "スキル・その他資格20_内容",
-    "スキル・その他資格21_取得年", "スキル・その他資格21_取得月", "スキル・その他資格21_内容",
-    "スキル・その他資格22_取得年", "スキル・その他資格22_取得月", "スキル・その他資格22_内容",
-    "スキル・その他資格23_取得年", "スキル・その他資格23_取得月", "スキル・その他資格23_内容",
-    "スキル・その他資格24_取得年", "スキル・その他資格24_取得月", "スキル・その他資格24_内容",
-    "スキル・その他資格25_取得年", "スキル・その他資格25_取得月", "スキル・その他資格25_内容",
-    "スキル・その他資格26_取得年", "スキル・その他資格26_取得月", "スキル・その他資格26_内容",
-    "スキル・その他資格27_取得年", "スキル・その他資格27_取得月", "スキル・その他資格27_内容",
-    "スキル・その他資格28_取得年", "スキル・その他資格28_取得月", "スキル・その他資格28_内容",
-    "スキル・その他資格29_取得年", "スキル・その他資格29_取得月", "スキル・その他資格29_内容",
-    "スキル・その他資格30_取得年", "スキル・その他資格30_取得月", "スキル・その他資格30_内容",
-    "そのほかのスキル", "免許資格など", "応募区分", "未使用", "対応状況区分", "未使用", "未使用", "未使用",
-    "メール送信区分", "対応コメント", "連絡可能な日時", "面接リマインドメール送信区分", "面接日時",
-    "面接リマインドメール送信日時", "応募先企業からのメッセージ", "未使用", "未使用", "未使用", "未使用",
-    "未使用", "仕事No", "掲載プラン", "業務名", "働く場所", "勤務地",
-    "募集1_雇用形態", "募集1_職種1", "募集1_職種2", "募集1_職種3", "募集1_給与（支払区分）", "募集1_給与（下限）", "募集1_給与（上限）", "募集1_給与（その他）",
-    "募集1_固定残業制（残業代の下限）", "募集1_固定残業制（残業代の上限）", "募集1_固定残業制（残業代に充当する労働時間数の下限）", "募集1_固定残業制（残業代に充当する労働時間数の上限）",
-    "募集2_雇用形態", "募集2_職種1", "募集2_職種2", "募集2_職種3", "募集2_給与（支払区分）", "募集2_給与（下限）", "募集2_給与（上限）", "募集2_給与（その他）",
-    "募集2_固定残業制（残業代の下限）", "募集2_固定残業制（残業代の上限）", "募集2_固定残業制（残業代に充当する労働時間数の下限）", "募集2_固定残業制（残業代に充当する労働時間数の上限）",
-    "募集3_雇用形態", "募集3_職種1", "募集3_職種2", "募集3_職種3", "募集3_給与（支払区分）", "募集3_給与（下限）", "募集3_給与（上限）", "募集3_給与（その他）",
-    "募集3_固定残業制（残業代の下限）", "募集3_固定残業制（残業代の上限）", "募集3_固定残業制（残業代に充当する労働時間数の下限）", "募集3_固定残業制（残業代に充当する労働時間数の上限）",
-    "未使用", "募集1_Happyボーナス", "未使用", "未使用", "通話ステータス",
-    "通話開始時間", "通話終了時間", "通話時間", "応募種別", "職場見学_時間(時間)", "職場見学_時間(分)", "職場見学_見学内容と当日の流れ",
-    "しごと体験_時間(時間)", "しごと体験_時間(分)", "しごと体験_給与", "しごと体験_体験内容と当日の流れ",
-    "ダイレクトメール", "ダイレクトメール特典", "重複有無", "AIダイレクトメール送信種別", "AIダイレクトメールID"
- ];
+      "応募受付先ID", "応募受付先", "問合せNo", "応募日時", "氏名（漢字）", "氏名（ふりがな）", "生年月日", "性別",
+      "郵便番号コード", "都道府県名", "市区町村名", "住所（その他）", "沿線名", "駅名", "メールアドレス（PC）",
+      "メールアドレス（携帯）", "電話番号", "そのほかの電話番号", "その他連絡事項", "現在の職業", "応募職種",
+      "応募職種の職務経験", "希望する雇用形態", "必要資格", "保有資格"
+    ];
 
-    const mappedRows = data.map(row => {
-      const rowObj = {};
-      header.forEach((col, i) => {
-        const value = row[i];
-        const mappedCol = fieldMap[col] || col;
-
-        if (col === "性別") {
-          rowObj[mappedCol] = genderMap[value] || value;
-        } else if (col === "電話番号") {
-          rowObj[mappedCol] = value.replace(/^TEL\s*/, "");
-        } else if (col === "店舗マスタ名") {
-          rowObj[mappedCol] = value.replace(/^未設定：\s*/, "");
-        } else {
-          rowObj[mappedCol] = value;
-        }
-      });
-      return outputHeader.map(col => rowObj[col] || "");
+    document.getElementById("drop_zone").addEventListener("dragover", function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
     });
 
-    const csvContent = [outputHeader, ...mappedRows].map(r => r.join(",")).join("\r\n");
-    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    document.getElementById("drop_zone").addEventListener("drop", function(e) {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (!file.name.endsWith(".csv")) {
+        alert("CSVファイルをドロップしてください");
+        return;
+      }
 
-    const originalName = file.name.replace(/\\.csv$/i, "");
-    link.download = originalName + "_converted.csv";
-    link.click();
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const text = new TextDecoder("shift_jis").decode(event.target.result);
+        const rows = text.split(/\r?\n/).filter(row => row.trim()).map(row => row.split(","));
 
-    document.getElementById("status").textContent = "変換完了！（" + link.download + " を保存しました）";
-  };
+        if (rows.length < 2) {
+          alert("CSVの内容が不正です");
+          return;
+        }
 
-  reader.readAsText(file, "utf-8");
-});
+        const header = rows[0];
+        const data = rows.slice(1);
+
+        const mappedRows = data.map((row, rowIndex) => {
+          const rowObj = {};
+
+          header.forEach((col, i) => {
+            const colClean = col.replace(/^"|"$/g, "").trim();
+            const rawValue = row[i];
+            const value = (rawValue || "").replace(/^"|"$/g, "").trim();
+            const mappedCol = fieldMap[colClean] || colClean;
+
+            if (colClean === "性別") {
+              rowObj[mappedCol] = genderMap[value] || value;
+            } else if (colClean === "電話番号") {
+              rowObj[mappedCol] = value.replace(/^TEL\s*/, "");
+            } else if (colClean === "店舗マスタ名") {
+              rowObj[mappedCol] = value.replace(/^未設定：\s*/, "");
+            } else {
+              rowObj[mappedCol] = value;
+            }
+          });
+
+          return outputHeader.map(col => rowObj[col] || "");
+        });
+
+        const escape = val => `"${(val || "").toString().replace(/"/g, '""')}"`;
+        const csvContent = [outputHeader, ...mappedRows]
+          .map(row => row.map(escape).join(","))
+          .join("\r\n");
+
+        const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = file.name.replace(/\.csv$/i, "") + "_converted.csv";
+        link.click();
+
+        document.getElementById("status").textContent = `変換完了！（${link.download} を保存しました）`;
+      };
+
+      reader.readAsArrayBuffer(file); // Shift_JIS に対応
+    });
+  </script>
+</body>
+</html>
