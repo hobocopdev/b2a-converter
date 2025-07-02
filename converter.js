@@ -58,14 +58,17 @@ document.getElementById("drop_zone").addEventListener("drop", function(e) {
   const reader = new FileReader();
   reader.onload = function(event) {
     const text = event.target.result;
-    const rows = text.split(/\r?\n/).filter(row => row.trim()).map(row => row.split(","));
+    const rows = text
+      .split(/\r?\n/)
+      .filter(row => row.trim())
+      .map(row => row.split(","));
 
     if (rows.length < 2) {
       alert("CSVの内容が不正です");
       return;
     }
 
-    const header = rows[0];
+    const header = rows[0].map(h => h.replace(/^\uFEFF/, "").trim()); // ← BOM削除 + 空白除去
     const data = rows.slice(1);
 
     const mappedRows = data.map(row => {
@@ -99,5 +102,5 @@ document.getElementById("drop_zone").addEventListener("drop", function(e) {
     document.getElementById("status").textContent = "変換完了！（" + link.download + " を保存しました）";
   };
 
-  reader.readAsText(file, "utf-8");
+  reader.readAsText(file, "shift_jis"); // ← 修正ポイント：自動で正しく文字化けしないように処理
 });
