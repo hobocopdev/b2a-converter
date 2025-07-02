@@ -57,8 +57,11 @@ document.getElementById("drop_zone").addEventListener("drop", function(e) {
 
   const reader = new FileReader();
   reader.onload = function(event) {
-    const text = event.target.result;
-    const rows = text.split(/\r?\n/).filter(row => row.trim()).map(row => row.split(","));
+    const text = new TextDecoder("shift_jis").decode(event.target.result);
+    const rows = text
+      .split(/\r?\n/)
+      .filter(row => row.trim())
+      .map(row => row.split(","));
 
     if (rows.length < 2) {
       alert("CSVの内容が不正です");
@@ -66,17 +69,13 @@ document.getElementById("drop_zone").addEventListener("drop", function(e) {
     }
 
     const header = rows[0];
-    console.log("✅ 読み込んだヘッダー:", header);
-
     const data = rows.slice(1);
-    const mappedRows = data.map((row, rowIndex) => {
+
+    const mappedRows = data.map(row => {
       const rowObj = {};
       header.forEach((col, i) => {
         const value = row[i];
         const mappedCol = fieldMap[col] || col;
-
-        // debug: マッピング確認
-        console.log(`[${rowIndex}] 元の列名: ${col}, 値: ${value}, → マッピング先: ${mappedCol}`);
 
         if (col === columnsFromB.gender) {
           rowObj[mappedCol] = genderMap[value] || value;
@@ -88,24 +87,20 @@ document.getElementById("drop_zone").addEventListener("drop", function(e) {
           rowObj[mappedCol] = value;
         }
       });
-
-      // debug: 最終出力する行の内容
-      const finalRow = outputHeader.map(col => rowObj[col] || "");
-      console.log(`[${rowIndex}] 最終出力行:`, finalRow);
-      return finalRow;
+      return outputHeader.map(col => rowObj[col] || "");
     });
-
-    console.log("✅ 出力行数（header含む）:", mappedRows.length + 1);
 
     const csvContent = [outputHeader, ...mappedRows].map(r => r.join(",")).join("\r\n");
     const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = file.name.replace(/\.csv$/i, "") + "_converted.csv";
+
+    const originalName = file.name.replace(/\.csv$/i, "");
+    link.download = originalName + "_converted.csv";
     link.click();
 
     document.getElementById("status").textContent = "変換完了！（" + link.download + " を保存しました）";
   };
 
-  reader.readAsText(file, "utf-8");
+  reader.readAsArrayBuffer(file);
 });
